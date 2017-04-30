@@ -1,8 +1,4 @@
 
-#ifdef __emscripten__
-#include <emscripten.h>
-#endif
-
 #include "print.h"
 #include "mm.h"
 
