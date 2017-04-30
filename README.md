@@ -21,6 +21,8 @@ heap to the browser console.
 
 ## Usage
 
+**Sadly Google Chrome currently has a bug which causes the tab to crash if `WebAssembly.Memory#grow()` is being called from WebAssembly. It works in Mozilla Firefox, I haven't tested it in other browsers.**
+
 The functions can be invoked in JavaScript as `instance.exports.malloc()/calloc()/free()`.
 
 In C these functions can be included with `mm.h`, they have the exact same signature as in the C standard library.
