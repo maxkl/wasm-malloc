@@ -1,0 +1,39 @@
+#/bin/bash
+
+set -e
+
+CFLAGS=${CFLAGS:-}
+LLCFLAGS=${LLCFLAGS:-}
+S2WASMFLAGS=${S2WASMFLAGS:-}
+
+llvm_root=${llvm_root:-$HOME/llvm-wasm/llvm-build/bin}
+
+outfile=$1
+outdir=$(dirname "$outfile")
+cfiles=( "${@:2}" )
+
+outfilename=${outfile%.*}
+bcfile=$outfilename.bc
+sfile=$outfilename.s
+wastfile=$outfilename.wast
+
+bcfiles=()
+changed=false
+for cfile in "${cfiles[@]}"
+do
+	cbcfile=$outdir/${cfile%.*}.bc
+	bcfiles+=("$cbcfile")
+
+	mkdir -p $(dirname "$cbcfile")
+
+	echo "Compiling $cfile to $cbcfile"
+	$llvm_root/clang -emit-llvm --target=wasm32 -nostdlib -nostdlibinc -ffreestanding $CFLAGS -o "$cbcfile" -c "$cfile"
+done
+
+echo "Combining LLVM bitcode files"
+$llvm_root/llvm-link -o "$bcfile" "${bcfiles[@]}"
+
+echo "Assembling final output file"
+$llvm_root/llc -asm-verbose=false $LLCFLAGS -o "$sfile" "$bcfile"
+s2wasm $S2WASMFLAGS -o "$wastfile" "$sfile"
+wast2wasm -o "$outfile" "$wastfile"
