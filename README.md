@@ -8,8 +8,8 @@ Because the WebAssembly MVP does not support shrinking the linear memory, freed 
 
 ## Building
 
-This requires llvm (compiled with the wasm32 target), wabt and binaryen. The path to the llvm bin directory has to be adjusted in the compile script. wabt and 
-binaryen should be accessible through the path.
+This requires llvm (compiled with the wasm32 target, see [this gist](https://gist.github.com/yurydelendik/4eeff8248aeb14ce763e)), wabt and binaryen. The path to the llvm bin directory has to be adjusted in the compile script. wabt and 
+binaryen must be accessible through the path.
 
 ```
 mkdir build
