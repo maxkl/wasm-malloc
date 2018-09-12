@@ -8,21 +8,18 @@ Because the WebAssembly MVP does not support shrinking the linear memory, freed 
 
 ## Building
 
-This requires llvm (compiled with the wasm32 target, see [this gist](https://gist.github.com/yurydelendik/4eeff8248aeb14ce763e)), wabt and binaryen. The path to the llvm bin directory has to be adjusted in the compile script. wabt and 
-binaryen must be accessible through the path.
+This requires the LLVM toolchain (compiled to include the experimental wasm32 target, see [yurydelendik/wasmception](https://github.com/yurydelendik/wasmception)). The path to the llvm binary directory has to be passed to the compilation script with the `LLVM_ROOT` environment variable.
 
+Example invocation of the compilation script:
 ```
 mkdir build
-CFLAGS=-O2 ./compile build/main.wasm src/mm.c src/main.c
+LLVM_ROOT=$HOME/ CFLAGS=-O2 ./compile build/main.wasm src/malloc.c src/test.c
 ```
 
-Debugging information can be enabled with the preprocessor macro `MM_DEBUG`. This also adds the function `print_heap()` which prints the current layout of the 
-heap to the browser console.
+Debug logging can be enabled with the preprocessor macro `MALLOC_DEBUG`. This also adds the function `print_heap()` which prints the current layout of the heap to the browser console.
 
 ## Usage
 
-**Sadly Google Chrome currently has a bug which causes the tab to crash if `WebAssembly.Memory#grow()` is being called from WebAssembly. It works in Mozilla Firefox, I haven't tested it in other browsers.**
+In C these functions can be included with `malloc.h`, they have the exact same signature as in the C standard library.
 
-The functions can be invoked in JavaScript as `instance.exports.malloc()/calloc()/free()`.
-
-In C these functions can be included with `mm.h`, they have the exact same signature as in the C standard library.
+The file `test.c` exports some test functions that you can call from JavaScript as `instance.exports.test_malloc/free/...(...)`.
