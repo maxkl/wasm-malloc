@@ -31,11 +31,11 @@ static bool block_info_valid(struct block_info *block) {
 	return block->magic == BLOCK_INFO_MAGIC;
 }
 
-size_t grow_memory(size_t pages) {
+static size_t grow_memory(size_t pages) {
 	return __builtin_wasm_grow_memory(pages);
 }
 
-uintptr_t grow_heap(size_t inc) {
+static uintptr_t grow_heap(size_t inc) {
 	uintptr_t old_heap_top = heap_top;
 
 	heap_top += inc;
