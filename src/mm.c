@@ -10,11 +10,14 @@
 
 #define PAGE_SIZE (64 * 1024)
 
+#define BLOCK_INFO_MAGIC 0x47f98950
+
 struct block_info {
+	int magic;
 	struct block_info *previous;
 	struct block_info *next;
-	bool free;
 	size_t size;
+	bool free;
 };
 #define BLOCK_INFO_SIZE (sizeof(struct block_info))
 
@@ -23,6 +26,10 @@ static uintptr_t heap_top;
 static struct block_info *first_block;
 static struct block_info *last_block;
 static struct block_info *first_free_block;
+
+static bool block_info_valid(struct block_info *block) {
+	return block->magic == BLOCK_INFO_MAGIC;
+}
 
 size_t grow_memory(size_t pages) {
 	return __builtin_wasm_grow_memory(pages);
@@ -88,6 +95,7 @@ void *malloc(size_t size) {
 					uintptr_t next_block_addr = (uintptr_t) block + BLOCK_INFO_SIZE + size;
 
 					struct block_info *next_block = (struct block_info *) next_block_addr;
+					next_block->magic = BLOCK_INFO_MAGIC;
 					next_block->previous = block;
 					next_block->next = block->next;
 					next_block->free = true;
@@ -120,6 +128,7 @@ void *malloc(size_t size) {
 #endif
 
 	struct block_info *new_block = (struct block_info *) grow_heap(BLOCK_INFO_SIZE + size);
+	new_block->magic = BLOCK_INFO_MAGIC;
 	new_block->previous = last_block;
 	new_block->next = NULL;
 	new_block->free = false;
@@ -139,6 +148,24 @@ void *malloc(size_t size) {
 
 void free(void *ptr) {
 	struct block_info *block = (struct block_info *) ((uintptr_t) ptr - BLOCK_INFO_SIZE);
+
+	if (!block_info_valid(block)) {
+#ifdef MM_DEBUG
+		prints("free(): invalid pointer: ");
+		printptr(ptr);
+		printc('\n');
+#endif
+		return;
+	}
+
+	if (block->free) {
+#ifdef MM_DEBUG
+		prints("free(): double free: ");
+		printptr(ptr);
+		printc('\n');
+#endif
+		return;
+	}
 	
 	block->free = true;
 	
@@ -201,6 +228,7 @@ void *realloc(void *ptr, size_t size) {
 }
 
 #ifdef MM_DEBUG
+__attribute__((visibility("default")))
 void print_heap() {
 	struct block_info *block = first_block;
 	if(block == NULL) {
@@ -229,6 +257,10 @@ void print_heap() {
 		prints("block at ");
 		printptr(block);
 		prints(": ");
+		if (!block_info_valid(block)) {
+			prints("invalid block pointer\n");
+			return;
+		}
 		printi(block->size);
 		prints(" bytes, ");
 		prints(block->free ? "free" : "used");
