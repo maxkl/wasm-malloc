@@ -36,7 +36,6 @@
 
 			window.instance = instance;
 			console.log('Module instantiated');
-			window.instance.exports.test();
 		});
 	}
 

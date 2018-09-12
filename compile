@@ -1,20 +1,23 @@
-#/bin/bash
+#!/bin/bash
 
 set -e
 
+if (( $# < 2 )); then
+    echo "Usage: ./compile <target file> <source files>..."
+    exit 1
+fi
+
+outfile="$1"
+srcfiles="${@:2}"
+
 CFLAGS=${CFLAGS:-}
-LLCFLAGS=${LLCFLAGS:-}
-S2WASMFLAGS=${S2WASMFLAGS:-}
 
-llvm_root=${llvm_root:-$HOME/llvm-wasm/llvm-build/bin}
+LLVM_PREFIX=${LLVM_ROOT:+$LLVM_ROOT/}
 
-outfile=$1
-outdir=$(dirname "$outfile")
-cfiles=( "${@:2}" )
-
-$llvm_root/clang \
+${LLVM_PREFIX}clang \
     --target=wasm32-unknown-unknown-wasm \
     -o $outfile \
     -nostartfiles \
-    -Wl,--entry=test,--demangle,--allow-undefined-file=src/external.syms \
-    ${cfiles[@]}
+    -Wl,--no-entry,--demangle,--allow-undefined-file=src/external.syms \
+    $CFLAGS \
+    -- $srcfiles
