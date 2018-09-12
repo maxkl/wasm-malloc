@@ -21,6 +21,7 @@ struct block_info {
 };
 #define BLOCK_INFO_SIZE (sizeof(struct block_info))
 
+static bool initialized = false;
 static size_t current_pages;
 static uintptr_t heap_top;
 static struct block_info *first_block;
@@ -33,6 +34,35 @@ static bool block_info_valid(struct block_info *block) {
 
 static size_t grow_memory(size_t pages) {
 	return __builtin_wasm_grow_memory(pages);
+}
+
+static void do_initialize() {
+#ifdef MM_DEBUG
+	prints("Initializing\n");
+#endif
+
+	current_pages = grow_memory(0);
+	heap_top = current_pages * PAGE_SIZE;
+	first_block = NULL;
+	last_block = NULL;
+	first_free_block = NULL;
+
+	initialized = true;
+
+#ifdef MM_DEBUG
+	prints("BLOCK_INFO_SIZE: ");
+	printi(BLOCK_INFO_SIZE);
+	printc('\n');
+	prints("Heap start: ");
+	printptr((void *) heap_top);
+	printc('\n');
+#endif
+}
+
+static void initialize() {
+	if (!initialized) {
+		do_initialize();
+	}
 }
 
 static uintptr_t grow_heap(size_t inc) {
@@ -64,26 +94,11 @@ static uintptr_t grow_heap(size_t inc) {
 	return old_heap_top;
 }
 
-__attribute__((visibility("default")))
-void mm_init() {
-	current_pages = grow_memory(0);
-	heap_top = current_pages * PAGE_SIZE;
-	first_block = NULL;
-	last_block = NULL;
-	first_free_block = NULL;
-
-#ifdef MM_DEBUG
-	prints("BLOCK_INFO_SIZE: ");
-	printi(BLOCK_INFO_SIZE);
-	printc('\n');
-	prints("Heap start: ");
-	printptr((void *) heap_top);
-	printc('\n');
-#endif
-}
-
 void *malloc(size_t size) {
+	initialize();
+
 	// TODO: alignment
+
 	struct block_info *block = first_free_block;
 	while(block != NULL) {
 		if(block->free) {
@@ -147,6 +162,13 @@ void *malloc(size_t size) {
 }
 
 void free(void *ptr) {
+	if (!initialized) {
+#ifdef MM_DEBUG
+		prints("free(): not yet initialized\n");
+#endif		
+		return;
+	}
+
 	struct block_info *block = (struct block_info *) ((uintptr_t) ptr - BLOCK_INFO_SIZE);
 
 	if (!block_info_valid(block)) {
@@ -202,6 +224,8 @@ void free(void *ptr) {
 }
 
 void *calloc(size_t nmemb, size_t size) {
+	initialize();
+
 	size_t full_size = nmemb * size;
 	if(nmemb != 0 && full_size / nmemb != size) {
 #ifdef MM_DEBUG
@@ -223,6 +247,7 @@ void *calloc(size_t nmemb, size_t size) {
 }
 
 void *realloc(void *ptr, size_t size) {
+	initialize();
 	// TODO
 	return NULL;
 }
@@ -230,6 +255,8 @@ void *realloc(void *ptr, size_t size) {
 #ifdef MM_DEBUG
 __attribute__((visibility("default")))
 void print_heap() {
+	initialize();
+
 	struct block_info *block = first_block;
 	if(block == NULL) {
 		prints("No blocks\n");
