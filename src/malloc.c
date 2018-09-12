@@ -2,9 +2,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "mm.h"
+#include "malloc.h"
 
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 #include "print.h"
 #endif
 
@@ -37,7 +37,7 @@ static size_t grow_memory(size_t pages) {
 }
 
 static void do_initialize() {
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 	prints("Initializing\n");
 #endif
 
@@ -49,7 +49,7 @@ static void do_initialize() {
 
 	initialized = true;
 
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 	prints("BLOCK_INFO_SIZE: ");
 	printi(BLOCK_INFO_SIZE);
 	printc('\n');
@@ -74,7 +74,7 @@ static uintptr_t grow_heap(size_t inc) {
 	if(heap_top > heap_max) {
 		size_t diff = heap_top - heap_max;
 		size_t pages = (diff + (PAGE_SIZE - 1)) / PAGE_SIZE;
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 		prints("Heap too small by ");
 		printi(diff);
 		prints(" bytes, ");
@@ -85,7 +85,7 @@ static uintptr_t grow_heap(size_t inc) {
 		current_pages = grow_memory(pages) + pages;
 	}
 
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 	prints("Heap now ends at ");
 	printptr((void *) heap_top);
 	printc('\n');
@@ -103,7 +103,7 @@ void *malloc(size_t size) {
 	while(block != NULL) {
 		if(block->free) {
 			if(block->size >= size) {
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 				prints("Found free block with sufficient size\n");
 #endif
 				if(block->size - size > BLOCK_INFO_SIZE) {
@@ -138,7 +138,7 @@ void *malloc(size_t size) {
 		block = block->next;
 	}
 
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 	prints("No free block with sufficient size found\n");
 #endif
 
@@ -163,7 +163,7 @@ void *malloc(size_t size) {
 
 void free(void *ptr) {
 	if (!initialized) {
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 		prints("free(): not yet initialized\n");
 #endif		
 		return;
@@ -172,7 +172,7 @@ void free(void *ptr) {
 	struct block_info *block = (struct block_info *) ((uintptr_t) ptr - BLOCK_INFO_SIZE);
 
 	if (!block_info_valid(block)) {
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 		prints("free(): invalid pointer: ");
 		printptr(ptr);
 		printc('\n');
@@ -181,7 +181,7 @@ void free(void *ptr) {
 	}
 
 	if (block->free) {
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 		prints("free(): double free: ");
 		printptr(ptr);
 		printc('\n');
@@ -216,7 +216,7 @@ void free(void *ptr) {
 
 	// TODO: if this is the last block, release it
 
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 	prints("Freed block at ");
 	printptr(ptr);
 	printc('\n');
@@ -228,7 +228,7 @@ void *calloc(size_t nmemb, size_t size) {
 
 	size_t full_size = nmemb * size;
 	if(nmemb != 0 && full_size / nmemb != size) {
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 		prints("calloc() multiplication overflow: ");
 		printi(nmemb);
 		prints(" * ");
@@ -252,7 +252,7 @@ void *realloc(void *ptr, size_t size) {
 	return NULL;
 }
 
-#ifdef MM_DEBUG
+#ifdef MALLOC_DEBUG
 __attribute__((visibility("default")))
 void print_heap() {
 	initialize();

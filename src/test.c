@@ -1,6 +1,6 @@
 
+#include "malloc.h"
 #include "print.h"
-#include "mm.h"
 
 __attribute__((visibility("default")))
 void *test_malloc(size_t size) {
