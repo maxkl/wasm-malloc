@@ -25,9 +25,7 @@ static struct block_info *last_block;
 static struct block_info *first_free_block;
 
 size_t grow_memory(size_t pages) {
-    size_t current_pages = __builtin_wasm_current_memory();
-    __builtin_wasm_grow_memory(pages);
-    return current_pages;
+	return __builtin_wasm_grow_memory(pages);
 }
 
 uintptr_t grow_heap(size_t inc) {
