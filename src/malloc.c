@@ -113,6 +113,8 @@ void *malloc(size_t size) {
 					next_block->magic = BLOCK_INFO_MAGIC;
 					next_block->previous = block;
 					next_block->next = block->next;
+					if (next_block->next) next_block->next->previous = next_block;
+
 					next_block->free = true;
 					next_block->size = block->size - size - BLOCK_INFO_SIZE;
 
@@ -195,7 +197,7 @@ void free(void *ptr) {
 	if(block->previous && block->previous->free) {
 		block->previous->size += BLOCK_INFO_SIZE + block->size;
 		block->previous->next = block->next;
-		block->next->previous = block->previous;
+		if(block->next) block->next->previous = block->previous;
 		if((uintptr_t) block == (uintptr_t) last_block) {
 			last_block = block->previous;
 		}
@@ -207,7 +209,7 @@ void free(void *ptr) {
 			last_block = block;
 		}
 		block->next = block->next->next;
-		block->next->previous = block;
+		if(block->next) block->next->previous = block;
 	}
 
 	if(first_free_block == NULL || (uintptr_t) block < (uintptr_t) first_free_block) {
