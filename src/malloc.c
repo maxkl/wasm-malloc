@@ -113,6 +113,8 @@ void *malloc(size_t size) {
 					next_block->magic = BLOCK_INFO_MAGIC;
 					next_block->previous = block;
 					next_block->next = block->next;
+					if (next_block->next) next_block->next->previous = next_block;
+
 					next_block->free = true;
 					next_block->size = block->size - size - BLOCK_INFO_SIZE;
 
