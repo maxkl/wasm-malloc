@@ -33,7 +33,7 @@ static bool block_info_valid(struct block_info *block) {
 }
 
 static size_t grow_memory(size_t pages) {
-	return __builtin_wasm_grow_memory(pages);
+	return __builtin_wasm_memory_grow(0, pages);
 }
 
 static void do_initialize() {
